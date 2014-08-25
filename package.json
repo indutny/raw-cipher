@@ -1,6 +1,6 @@
 {
   "name": "raw-cipher",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Raw OpenSSL EVP_Cipher() wrapper",
   "main": "index.js",
   "scripts": {
