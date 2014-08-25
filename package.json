@@ -1,0 +1,32 @@
+{
+  "name": "raw-cipher",
+  "version": "0.0.0",
+  "description": "Raw OpenSSL EVP_Cipher() wrapper",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha test/**/*-test.js",
+    "install": "node-gyp rebuild"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:indutny/raw-cipher"
+  },
+  "keywords": [
+    "OpenSSL",
+    "Cipher",
+    "raw"
+  ],
+  "author": "Fedor Indutny <fedor@indutny.com>",
+  "license": "MIT",
+  "gypfile": true,
+  "bugs": {
+    "url": "https://github.com/indutny/raw-cipher/issues"
+  },
+  "homepage": "https://github.com/indutny/raw-cipher",
+  "dependencies": {
+    "bindings": "^1.2.1"
+  },
+  "devDependencies": {
+    "mocha": "^1.21.4"
+  }
+}
