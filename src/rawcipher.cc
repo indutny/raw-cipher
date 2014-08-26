@@ -100,14 +100,24 @@ class CipherBase : public ObjectWrap {
 
     if (static_cast<int>(Buffer::Length(args[1])) !=
             EVP_CIPHER_key_length(type)) {
-      return ThrowException(Exception::Error(String::New(
-          "Invalid key length")));
+      char buf[1024];
+      snprintf(buf,
+               sizeof(buf),
+               "Invalid key length. Expected %d, got %d",
+               EVP_CIPHER_key_length(type),
+               static_cast<int>(Buffer::Length(args[1])));
+      return ThrowException(Exception::Error(String::New(buf)));
     }
 
     if (static_cast<int>(Buffer::Length(args[2])) !=
             EVP_CIPHER_iv_length(type)) {
-      return ThrowException(Exception::Error(String::New(
-          "Invalid iv length")));
+      char buf[1024];
+      snprintf(buf,
+               sizeof(buf),
+               "Invalid iv length. Expected %d, got %d",
+               EVP_CIPHER_iv_length(type),
+               static_cast<int>(Buffer::Length(args[2])));
+      return ThrowException(Exception::Error(String::New(buf)));
     }
 
     CipherBase<K>* b = new CipherBase<K>(
