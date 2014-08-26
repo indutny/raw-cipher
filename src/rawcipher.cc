@@ -1,4 +1,5 @@
 #include "node.h"
+#include "nan.h"
 #include "node_buffer.h"
 #include "node_object_wrap.h"
 #include "openssl/evp.h"
@@ -18,16 +19,16 @@ template <Kind K>
 class CipherBase : public ObjectWrap {
  public:
   static void Init(Handle<Object> target) {
-    Local<FunctionTemplate> t = FunctionTemplate::New(CipherBase<K>::New);
+    Local<FunctionTemplate> t = NanNew<FunctionTemplate>(CipherBase<K>::New);
 
     const char* name = K == kCipher ? "Cipher" : "Decipher";
 
     t->InstanceTemplate()->SetInternalFieldCount(1);
-    t->SetClassName(String::NewSymbol(name));
+    t->SetClassName(NanNew<String>(name));
 
     NODE_SET_PROTOTYPE_METHOD(t, "write", CipherBase<K>::Write);
 
-    target->Set(String::New(name), t->GetFunction());
+    target->Set(NanNew<String>(name), t->GetFunction());
   }
 
  protected:
@@ -43,14 +44,13 @@ class CipherBase : public ObjectWrap {
     EVP_CIPHER_CTX_cleanup(&ctx_);
   }
 
-  static Handle<Value> Write(const Arguments& args) {
-    HandleScope scope;
+  static NAN_METHOD(Write) {
+    NanScope();
 
     if (args.Length() != 2 ||
         !Buffer::HasInstance(args[0]) ||
         !Buffer::HasInstance(args[1])) {
-      return ThrowException(Exception::Error(String::New(
-          "Invalid arguments length, expected write(out, in)")));
+      return NanThrowError("Invalid arguments length, expected write(out, in)");
     }
 
     CipherBase<K>* b = ObjectWrap::Unwrap<CipherBase<K> >(args.This());
@@ -64,38 +64,36 @@ class CipherBase : public ObjectWrap {
 
     unsigned char* in = reinterpret_cast<unsigned char*>(Buffer::Data(args[1]));
     size_t inl = Buffer::Length(args[1]);
-    if (inl % b->bsize_ != 0) {
-      return ThrowException(Exception::Error(String::New(
-          "Input length mod block size != 0")));
-    }
-    if (outl != inl) {
-      return ThrowException(Exception::Error(String::New(
-          "Input should have the same size as output")));
-    }
+    if (inl % b->bsize_ != 0)
+      return NanThrowError("Input length mod block size != 0");
+    if (outl != inl)
+      return NanThrowError("Input should have the same size as output");
 
     EVP_Cipher(ctx, out, in, inl);
 
-    return scope.Close(Null());
+    NanReturnUndefined();
   }
 
-  static Handle<Value> New(const Arguments& args) {
-    HandleScope scope;
+  static NAN_METHOD(New) {
+    NanScope();
 
     if (args.Length() != 3 ||
         !args[0]->IsString() ||
         !Buffer::HasInstance(args[1]) ||
         !Buffer::HasInstance(args[2])) {
-      return ThrowException(Exception::Error(String::New(
-          "Invalid arguments length, expected "
-          "new Cipher/Decipher(type, key, iv)")));
+      return NanThrowError("Invalid arguments length, expected "
+                           "new Cipher/Decipher(type, key, iv)");
     }
 
     String::Utf8Value v(args[0].As<String>());
     const EVP_CIPHER* type = EVP_get_cipherbyname(*v);
     if (type == NULL) {
-      return ThrowException(Exception::Error(String::Concat(
-          String::New("Invalid cipher type: "),
-          args[0].As<String>())));
+      char buf[1024];
+      snprintf(buf,
+               sizeof(buf),
+               "Invalid cipher type: %s",
+               *v);
+      return NanThrowError(buf);
     }
 
     if (static_cast<int>(Buffer::Length(args[1])) !=
@@ -106,7 +104,7 @@ class CipherBase : public ObjectWrap {
                "Invalid key length. Expected %d, got %d",
                EVP_CIPHER_key_length(type),
                static_cast<int>(Buffer::Length(args[1])));
-      return ThrowException(Exception::Error(String::New(buf)));
+      return NanThrowError(buf);
     }
 
     if (static_cast<int>(Buffer::Length(args[2])) !=
@@ -117,7 +115,7 @@ class CipherBase : public ObjectWrap {
                "Invalid iv length. Expected %d, got %d",
                EVP_CIPHER_iv_length(type),
                static_cast<int>(Buffer::Length(args[2])));
-      return ThrowException(Exception::Error(String::New(buf)));
+      return NanThrowError(buf);
     }
 
     CipherBase<K>* b = new CipherBase<K>(
@@ -126,7 +124,7 @@ class CipherBase : public ObjectWrap {
         reinterpret_cast<unsigned char*>(Buffer::Data(args[2])));
     b->Wrap(args.This());
 
-    return scope.Close(args.This());
+    NanReturnValue(args.This());
   }
 
   EVP_CIPHER_CTX ctx_;
