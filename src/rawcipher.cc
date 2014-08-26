@@ -94,7 +94,7 @@ class CipherBase : public ObjectWrap {
     const EVP_CIPHER* type = EVP_get_cipherbyname(*v);
     if (type == NULL) {
       return ThrowException(Exception::Error(String::Concat(
-          String::New("Invalid cipher type"),
+          String::New("Invalid cipher type: "),
           args[0].As<String>())));
     }
 
